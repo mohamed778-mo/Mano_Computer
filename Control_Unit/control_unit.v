@@ -2,7 +2,7 @@ module ControlUnit (
     input [7:0] T, input [7:0] D ,input I, input [7:0] B, 
     output  LDAC, CLRAC, INRAC,LDAR,RriteMem,LDDR,LDIR,INRPC,CLRSC,
     output [0:2] s, 
-    output AND,ADD,LDA,CMA,OR
+    output AND,ADD,LDA,CMA,OR,INC
 ); 
 // AC 
 AC_Control my_ac ( 
@@ -74,7 +74,8 @@ ALU_CONTROL alu (
 .ADD(ADD),
 .LDA(LDA),
 .CMA(CMA),
-.OR(OR) 
+.OR(OR),
+.INC(INC) 
 ); 
 endmodule 
 //  AC_Control 
@@ -82,9 +83,9 @@ module AC_Control (
     input [7:0] T, input [7:0] D ,input I, input [7:0] B, 
     output  LD,CLR,INR 
 ); 
-assign LD= (T[5]  & (D[0]|D[1]|D[2]) ) | ((D[7] & !I & T[3]) &B[2]) | (D[5]&T[5]); //B[9]
+assign LD= (T[5]  & (D[0]|D[1]|D[2]) ) | ((D[7] & !I & T[3]) &B[2]) | (D[5]&T[5])|((D[7] & !I & T[3])&B[0]); //B[9]
 assign CLR = (D[7] & !I & T[3]) & B[3]; //B[11]
-assign INR = (D[7] & !I & T[3])&B[0]; //B[5]
+assign INR =0;  //B[5]
 endmodule 
 //   AR_Control 
 module AR_Control(LD, T, D, I); 
@@ -152,17 +153,18 @@ endmodule
 // rest of instruction_control 
 module ALU_CONTROL ( 
  T, D, I,B ,
-AND,ADD,LDA,CMA,OR 
+AND,ADD,LDA,CMA,OR,INC
 ); 
 input  I; 
 input [7:0] T, D ; 
 input [7:0] B; 
-output AND,ADD,LDA,CMA,OR   ; 
+output AND,ADD,LDA,CMA,OR,INC  ; 
 assign AND= D[0] & T[5]; 
 assign ADD= D[1] & T[5]; 
 assign LDA= D[2] & T[5]; 
 assign CMA= (D[7] & !I & T[3]) & B[2]; 
-assign OR= D[5]& T[5];             
+assign OR= D[5]& T[5];    
+assign INC=  (D[7] & !I & T[3]) & B[0];         
 endmodule 
 // sc_Control 
 module SC_Control ( 
