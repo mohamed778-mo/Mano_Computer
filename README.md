@@ -31,5 +31,6 @@ AC_Reg, AR_Reg, DR_Reg, IR_Reg, PC_Reg: Registers for the AC, AR, DR, IR, and PC
 
 
 # Output signal
-![14e5f9d2-aa60-4718-ae11-ab6f39a129f8](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/2e51e159-16d3-461a-ae4e-31d4426d9fa3)
+![a2ccfea9-946e-442e-afd0-94a243124e9d](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/adf52a81-b2b7-43eb-adfc-efe2338cc579)
+
 
