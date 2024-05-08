@@ -1,8 +1,5 @@
-# Mano Computer
-
+ ## Mano Computer
 ![Screenshot (1)](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/3ef2a44a-68bb-4b61-acb5-76072ae3439a)
-
-
 
 
 ## Overview
@@ -23,5 +20,15 @@ AC_Reg, AR_Reg, DR_Reg, IR_Reg, PC_Reg: Registers for the AC, AR, DR, IR, and PC
 - **Sequence_Counter3Bit2, Decoder3x8**: Counter and decoder modules for sequencing and decoding operations.
 - **Alu**: The Arithmetic Logic Unit (ALU) module.
 
+## Instructions
+![056c2a3c-6dc6-4a83-8803-f81e884c8900](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/83fa5602-8c57-42fb-853c-a46ed40596a4)
+
+
+## Design
+
+![8d035b11-9930-40f5-bdb6-eeea82994b85](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/7a63a359-7f88-4663-a8d0-db6ac0344a88)
+
+
 # Output signal
+![14e5f9d2-aa60-4718-ae11-ab6f39a129f8](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/2e51e159-16d3-461a-ae4e-31d4426d9fa3)
 
