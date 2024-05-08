@@ -13,7 +13,6 @@ In the Mano_Computer model, the orders that can be executed typically include ba
 AC_Control, AR_Control, DR_Control, IR_Control, PC_Control, MEM_Control, SC_Control: These modules control the operations of the Accumulator (AC), Address Register (AR), Data Register (DR), Instruction Register (IR), Program Counter (PC), Memory (RAM), and System Clock (SC) respectively.
 - **REGISTERS**: AC-AR-DR-PC-IR Register.
 - **CommonBus**: Manages the communication bus between various components.
-- **Selections**: Selects appropriate signals from the common bus for different components.
 - **ALU_CONTROL**: Controls the operations of the Arithmetic Logic Unit (ALU).
 AC_Reg, AR_Reg, DR_Reg, IR_Reg, PC_Reg: Registers for the AC, AR, DR, IR, and PC respectively.
 - **MEMORY**: Models an 8x4-bit MEMORY.
