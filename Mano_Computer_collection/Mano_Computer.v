@@ -91,7 +91,7 @@ module AR_Control(LD, T, D, I);
  input  I; 
  input [7:0] T, D; 
  output LD; 
- assign LD =(~D[7] & I & T[3]) | T[2];
+ assign LD =((~D[7]) & I & T[3]) | T[2] |T[0];
 endmodule 
 //   DR_Control 
 module DR_Control ( 
@@ -99,7 +99,7 @@ module DR_Control (
 ); 
 input [7:0] T,D; 
  output Load ; 
- assign Load = (T[4] &(D[0] | D[1] | D[2] )) | (D[5]&T[4]); 
+ assign Load = (T[4] &(D[0] | D[1] | D[2] )) | (D[5]&T[4]) ; 
 endmodule 
 // IR_Control 
 module IR_Control ( 
@@ -130,7 +130,7 @@ module CommonBus_Control(x, D, T, I);
  assign x[4] = (D[3] & T[4]);     //AC  
  assign x[5] = T[2] ;   
  assign x[6] =0;       
- assign x[7] = T[1] | ((~D[7]) & I & T[3]) | ((D[0] | D[1] | D[2] |D[6]) & T[4]);   // M[AR]   
+ assign x[7] = T[1] | ((~D[7]) & I & T[3]) | ((D[0] | D[1] | D[2] |D[6]) & T[4]) | (D[5]&T[4]);   // M[AR]   
 endmodule 
 ////////////////////////
 module Selections ( 
@@ -172,8 +172,8 @@ input  I;
 input [7:0] T, D; 
 output  CLR; 
  
-//assign CLR=((D[7] & ~I & T[3])|((D[0]|D[1]|D[2]|(D[5]))&T[5]));
-assign CLR=((D[7] & (~I) & T[3])|((D[0]|D[1]|D[2]|(D[5]))&T[5]) | (D[3]&T[4])|(D[4]&T[4])|(D[6]&T[6]));
+assign CLR=((D[7] & ~I & T[3])|((D[0]|D[1]|D[2]|(D[5]))&T[5]));
+
 //assign INR=~((D[3]|D[4])&T[4])|(D[7] & ~I & T[3])|((D[0]|D[1]|D[2]|D[5])&T[5]) |(D[6]&T[6]);
 
 endmodule
@@ -198,7 +198,6 @@ endmodule
  ///////////////////////////////////////
  module AR_Reg( 
      input clk ,LD
-      
      ,input[3:0] in 
      ,output reg [3:0] out_ar 
  ) ; 
@@ -274,15 +273,22 @@ endmodule
  
  reg [7:0] ram [0:15];  // 16 memory locations and one location 8 bit 
  
+ 
+// assign AND= D[0] & T[5]; 
+// assign ADD= D[1] & T[5]; 
+// assign LDA= D[2] & T[5]; 
+// assign CMA= (D[7] & !I & T[3]) & B[2]; 
+// assign OR= D[5]& T[5];   
+  
      initial begin 
      // Initialize memory array with desired values 
-     ram[0]  = 8'h0C;  //00001010
-     ram[1]  = 8'h91; 
-     ram[2]  = 8'h26;
-     ram[3]  = 8'h76;  
-     ram[4]  = 8'h04; 
-     ram[5]  = 8'h05; 
-     ram[6]  = 8'h06;  
+     ram[0]  = 8'h0C;  //00001100   AND 
+     ram[1]  = 8'h13;  //00010011   ADD             the firt 4 DR   and 3 after go to  decoder
+     ram[2]  = 8'h24;  //00100100   LDA    
+     ram[3]  = 8'h56;  //01010110   OR
+     ram[4]  = 8'h78;  //01111000   CLA       //B[11] ==> B[3]
+     ram[5]  = 8'h74;  //01110100   CMA       //B[9]  ==>B[2]
+     ram[6]  = 8'h71;  //01110001   INC      //B[5]  ==>B[0]
      ram[7]  = 8'h07; 
      ram[8]  = 8'h08; 
      ram[9]  = 8'h09; 
@@ -311,13 +317,13 @@ module BUS_SEL (
       wire [7:0] mux_out;   
       // Multiplexer module for selecting bits 
       MUX_8to1 mux_8to1 ( 
-          .d0(0),
+          .d0(8'h0),
           .d1(AR), 
           .d2(PC), 
           .d3(DR), 
           .d4(AC), 
           .d5(IR), 
-          .d6(0), 
+          .d6(8'h0), 
           .d7(RAM),
           .sel(s), 
           .out(OUT) 
@@ -376,7 +382,7 @@ module BUS_SEL (
                  count = 3'b000;
              else 
                  count = count + 3'b001;
-         end
+                 end
          
  endmodule
  
@@ -446,7 +452,9 @@ module BUS_SEL (
  
  module mano_all(
   input CLK ,
-  output E,MEM,AR,PC,IR,DR,AC,SC
+  output E,
+  output[7:0]MEM,IR,DR,AC,SC,
+  output[3:0]AR,PC
   );
   
 
@@ -534,7 +542,7 @@ module BUS_SEL (
    
      .clk(CLK),
      .LD(LDAR),
-     .in(out_cb),
+     .in(out_cb[3:0]),
      .out_ar(ar_data)
  );
  
@@ -565,7 +573,7 @@ module BUS_SEL (
  PC_Reg PC_Reg_inst (
      .INR(INRPC),
      .clk(CLK),
-     .in(out_cb),
+     .in(out_cb[3:0]),
      .out_pc(pc_data)
  );
  // Add your additional code here
@@ -591,7 +599,7 @@ module BUS_SEL (
 
  
  // Instantiate the Sequence_Counter3Bit2 module
- Sequence_Counter3Bit2 Sequence_Counter3Bit2_inst (
+    Sequence_Counter3Bit2 Sequence_Counter3Bit2_inst (
      .clk(CLK),
      .CLR(CLRSC),
      .count(count) /////////////////////////////////////////////////////////////
