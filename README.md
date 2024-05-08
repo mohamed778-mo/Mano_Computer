@@ -22,7 +22,8 @@ AC_Reg, AR_Reg, DR_Reg, IR_Reg, PC_Reg: Registers for the AC, AR, DR, IR, and PC
 - **Alu**: The Arithmetic Logic Unit (ALU) module.
 
 ## Instructions
-![056c2a3c-6dc6-4a83-8803-f81e884c8900](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/b807a523-fd00-428b-8e08-458e6ab572e8)
+![8664903c-ba8d-410f-91c1-38407b666f25](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/b5e83d04-af0f-4e23-8bbc-3719556847f9)
+
 
 
 ## Design
