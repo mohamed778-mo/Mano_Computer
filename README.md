@@ -1,6 +1,7 @@
 # Mano Computer
-Hello World 🤓
-![OIP](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/0cfcb1bf-6b19-4963-ae37-953659b75182)
+Hello World 
+
+![cat PC](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/631d8e31-6248-4c77-b8a1-7d2c2b7deb5a)
 
 
 
