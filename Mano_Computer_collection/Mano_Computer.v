@@ -21,7 +21,7 @@ AR_Control ar(
 .D(D),
 .LD(LDAR)
 ) ; 
- //DR 
+ //DR OUT
  DR_Control dr ( 
  .T(T),
  .D(D),
@@ -30,7 +30,7 @@ AR_Control ar(
  //IR
 IR_Control  ir ( 
  .T(T),
- .Load(LDIR)
+ .load(LDIR)
 ); 
  //PC 
  PC_Control  pc ( 
@@ -172,7 +172,8 @@ input  I;
 input [7:0] T, D; 
 output  CLR; 
  
-assign CLR=((D[7] & ~I & T[3])|((D[0]|D[1]|D[2])&T[5])|(D[5])&T[5]);
+//assign CLR=((D[7] & ~I & T[3])|((D[0]|D[1]|D[2]|(D[5]))&T[5]));
+assign CLR=((D[7] & (~I) & T[3])|((D[0]|D[1]|D[2]|(D[5]))&T[5]) | (D[3]&T[4])|(D[4]&T[4])|(D[6]&T[6]));
 //assign INR=~((D[3]|D[4])&T[4])|(D[7] & ~I & T[3])|((D[0]|D[1]|D[2]|D[5])&T[5]) |(D[6]&T[6]);
 
 endmodule
@@ -233,7 +234,9 @@ endmodule
      ,output reg [7:0] out_ir
  ) ; 
   
- 
+  initial begin 
+     out_ir=8'h0; 
+ end 
      always @(posedge clk ) begin 
        
         if (load) begin out_ir <=in; end
@@ -299,361 +302,351 @@ endmodule
  end 
  endmodule
  //////////////////////////////////
- module BUS_SEL ( 
-     input [7:0] DR, AC, IR, RAM,  
-     input [3:0] AR, PC,  
-     input [2:0] s,                        
-     output reg [7:0] OUT                    
- ); 
-     wire [7:0] mux_out;   
-     // Multiplexer module for selecting bits 
-     MUX_8to1 mux_8to1 ( 
-         .d0(AR), 
-         .d1(PC), 
-         .d2(DR), 
-         .d3(AC), 
-         .d4(IR), 
-         .d5(RAM), 
-         .sel(s), 
-         .out(OUT) 
-     ); 
+module BUS_SEL ( 
+      input [7:0] DR, AC, IR, RAM,  
+      input [3:0] AR, PC,  
+      input [2:0] s,                        
+      output  [7:0] OUT                    
+  ); 
+      wire [7:0] mux_out;   
+      // Multiplexer module for selecting bits 
+      MUX_8to1 mux_8to1 ( 
+          .d0(0),
+          .d1(AR), 
+          .d2(PC), 
+          .d3(DR), 
+          .d4(AC), 
+          .d5(IR), 
+          .d6(0), 
+          .d7(RAM),
+          .sel(s), 
+          .out(OUT) 
+      ); 
+   
+ //     always @* begin 
+ //         case (s) 
+ //             3'b000: OUT = AR;  // Select AR 
+ //             3'b001: OUT = PC;  // Select PC 
+ //             3'b010: OUT = DR;  // Select DR 
+ //             3'b011: OUT = AC;  // Select AC 
+ //             3'b100: OUT = IR;  // Select IR 
+ //             3'b101: OUT = RAM; // Select RAM 
+ //             default: OUT = 8'h00;  // Default  
+ //         endcase 
+ //     end 
+   
+  endmodule 
   
-//     always @* begin 
-//         case (s) 
-//             3'b000: OUT = AR;  // Select AR 
-//             3'b001: OUT = PC;  // Select PC 
-//             3'b010: OUT = DR;  // Select DR 
-//             3'b011: OUT = AC;  // Select AC 
-//             3'b100: OUT = IR;  // Select IR 
-//             3'b101: OUT = RAM; // Select RAM 
-//             default: OUT = 8'h00;  // Default  
-//         endcase 
-//     end 
-  
- endmodule 
- 
-module MUX_8to1 ( 
-     input [7:0]  d0, d3, d4, d5,d6,d7, // 8-bit input data 
-     input [2:0] sel, 
-     input [3:0]d2, d1,                  // Selection input 
-     output reg [7:0] out                   // Output data 
- ); 
-  
-     always @* begin 
-         case (sel) 
-             3'b000:out=d0; 
-    3'b001:out=d1; 
-    3'b010:out=d2; 
-    3'b011:out=d3; 
-    3'b100:out=d4; 
-    3'b101:out=d5; 
-    3'b110:out=d6; 
-    3'b111:out=d7; 
-         endcase 
-     end 
-  
- endmodule
-
-
+ module MUX_8to1 ( 
+      input [7:0]  d0, d3, d4, d5,d6,d7, // 8-bit input data 
+      input [2:0] sel, 
+      input [3:0]d2, d1,                  // Selection input 
+      output reg [7:0] out                   // Output data 
+  ); 
+   
+      always @* begin 
+          case (sel) 
+              3'b000:out=d0; 
+     3'b001:out=d1; 
+     3'b010:out=d2; 
+     3'b011:out=d3; 
+     3'b100:out=d4; 
+     3'b101:out=d5; 
+     3'b110:out=d6; 
+     3'b111:out=d7; 
+          endcase 
+      end 
+   
+  endmodule
 
 //////////////////////////////////////
-module Sequence_Counter3Bit2( 
-    input clk, reset, 
-    output reg [2:0] count 
-); 
 
  /////////////////////////
- module Sequence_Counter3Bit2( 
-     input clk, CLR,
-     output reg [2:0] count 
- ); 
- initial begin 
-     count=3'h0; 
- end 
-      always @(posedge clk) begin 
-        if (CLR) 
-            count <= 3'h0; 
-        else  
-            count <= count + 1; 
-    end 
+ 
+ 
+ module Sequence_Counter3Bit2(CLR, clk, count);
+ 
+     input CLR,  clk;
+     
+     output reg [2:0] count;
+ initial begin count=3'b000; end
+     always @ (posedge clk)
+         begin
+             if(CLR)
+                 count = 3'b000;
+             else 
+                 count = count + 3'b001;
+         end
+         
  endmodule
- ////////////////////////////
-
  
  module Decoder3x8 ( 
-     input wire [2:0] A, 
-     output reg [7:0] Y 
- ); 
- always @* 
- begin 
-     case(A) 
-         3'b000: Y = 8'b00000001; 
-         3'b001: Y = 8'b00000010; 
-         3'b010: Y = 8'b00000100; 
-         3'b011: Y = 8'b00001000; 
-         3'b100: Y = 8'b00010000; 
-         3'b101: Y = 8'b00100000; 
-         3'b110: Y = 8'b01000000; 
-         3'b111: Y = 8'b10000000; 
-         default: Y = 8'b00000000; 
-     endcase 
- end          
- endmodule
+      input wire [2:0] A, 
+      output reg [7:0] Y 
+  ); 
+  always @* 
+  begin 
+      case(A) 
+          3'b000: Y = 8'b00000001; 
+          3'b001: Y = 8'b00000010; 
+          3'b010: Y = 8'b00000100; 
+          3'b011: Y = 8'b00001000; 
+          3'b100: Y = 8'b00010000; 
+          3'b101: Y = 8'b00100000; 
+          3'b110: Y = 8'b01000000; 
+          3'b111: Y = 8'b10000000; 
+          default: Y = 8'b00000000; 
+      endcase 
+  end          
+  endmodule
  ///////////////////////
  module Alu(
-     input wire AND, ADD, LDA, CMA, OR,
-     input wire cin,
-     input wire [7:0] out_ac, 
-     input wire [7:0] out_dr, 
-     output reg [7:0] result, 
-     output reg cout 
- );
- 
- always @(*)
- begin
-     // AND operation
-     if (AND) begin 
-         result = out_ac & out_dr;
-         cout = 0; 
-     end
-     // ADD operation
-     else if (ADD) begin
-         {cout, result} = out_ac + out_dr + cin;
-     end
-     // LOAD operation
-     else if (LDA) begin
-         result = out_dr;
-         cout = 0; 
-     end 
-     // OR operation                                      
-     else if (OR) begin
-         result = out_ac | out_dr;
-         cout = 0; 
-     end
-     // COMPLEMENT operation
-     else if (CMA) begin
-         result = ~out_ac;
-         cout = 0;
-     end
-     else begin
-         result = out_ac;
-         cout = 0;
-     end
- end
- endmodule
- 
- 
+      input wire AND, ADD, LDA, CMA, OR,
+      input wire cin,
+      input wire [7:0] out_ac, 
+      input wire [7:0] out_dr, 
+      output reg [7:0] result, 
+      output reg cout 
+  );
+  
+  always @(*)
+  begin
+      // AND operation
+      if (AND) begin 
+          result = out_ac & out_dr;
+          cout = 0; 
+      end
+      // ADD operation
+      else if (ADD) begin
+          {cout, result} = out_ac + out_dr + cin;
+      end
+      // LOAD operation
+      else if (LDA) begin
+          result = out_dr;
+          cout = 0; 
+      end 
+      // OR operation                                      
+      else if (OR) begin
+          result = out_ac | out_dr;
+          cout = 0; 
+      end
+      // COMPLEMENT operation
+      else if (CMA) begin
+          result = ~out_ac;
+          cout = 0;
+      end
+      else begin
+          result = out_ac;
+          cout = 0;
+      end
+  end
+  endmodule
+  
+ ///////////////////////
  
  module mano_all(
- input CLK ,
- output COUT,MEM,AR,PC,IR,DR,AC,SC
+  input CLK ,
+  output E,MEM,AR,PC,IR,DR,AC,SC
+  );
+  
+
+     
+  // Inputs
+  wire [7:0] T;
+  wire [7:0] D;
+  wire I;
+  wire [7:0] B;
+  reg cin;
+  // Outputs
+  wire LDAC, CLRAC, INRAC, LDAR, RriteMem, LDDR, LDIR, INRPC, CLRSC;
+  wire [0:2] s;
+  wire AND, ADD, LDA, CMA, OR;
+  wire [7:0] dr_data,ir_data,ram_data;
+  wire [3:0] ar_data, pc_data;
+  wire [7:0] adder_out;
+  wire [7:0] ac_data;
+  wire e_data;
+  wire [7:0] out_cb;
+  wire [2:0] count;
+  
+  initial begin cin=0; end
+  // Instantiate ControlUnit module
+  ControlUnit control_unit_inst (
+      .T(T),
+      .D(D),
+      .I(ir_data[7]),
+      .B(ir_data),
+      .LDAC(LDAC),
+      .CLRAC(CLRAC),
+      .INRAC(INRAC),
+      .LDAR(LDAR),
+      .RriteMem(RriteMem),
+      .LDDR(LDDR),
+      .LDIR(LDIR),
+      .INRPC(INRPC),
+      .CLRSC(CLRSC),
+      .s(s),
+      .AND(AND),
+      .ADD(ADD),
+      .LDA(LDA),
+      .CMA(CMA),
+      .OR(OR)
+  );
+  
+  ///////////////////////
+  // Inputs
+ 
+
+  // Instantiate AC_Reg module
+  AC_Reg ac_reg_inst (
+      .INR(INRAC),
+      .clk(CLK),
+      .LD(LDAC),
+      .CLR(CLRAC),
+      .in(adder_out),
+      .out_ac(ac_data)
+  );
+  
+  
+  
+ 
+  
+  // Inputs
+
+  
+  
+  // Instantiate BUS_SEL module
+  BUS_SEL bus_sel_inst (
+      .DR(dr_data),
+      .AC(ac_data),
+      .IR(ir_data),
+      .RAM(ram_data),
+      .AR(ar_data),
+      .PC(pc_data),
+      .s(s),
+      .OUT(out_cb)
+  );
+ 
+ 
+ // Declare signals
+ // Instantiate the AR_Reg module
+ AR_Reg AR_Reg_inst (
+   
+     .clk(CLK),
+     .LD(LDAR),
+     .in(out_cb),
+     .out_ar(ar_data)
  );
+ 
+ 
+ // Instantiate the DR_Reg module
+ DR_Reg DR_Reg_inst (
+     .clk(CLK),
+     .Load(LDDR),
+     .in(out_cb),
+     .out_dr(dr_data)
+ );
+ 
+ // Add your additional code here
+ 
+ 
+ // Declare signals
+ 
+ 
+ // Instantiate the IR_Reg module
+ IR_Reg IR_Reg_inst (
+     .clk(CLK),
+     .load(LDIR),
+     .in(out_cb),
+     .out_ir(ir_data)
+ );
+ 
+ // Instantiate the PC_Reg module
+ PC_Reg PC_Reg_inst (
+     .INR(INRPC),
+     .clk(CLK),
+     .in(out_cb),
+     .out_pc(pc_data)
+ );
+ // Add your additional code here
+ 
+ 
+ 
+ 
+ // Instantiate the RAM_8x4bit module
+ RAM_8x4bit RAM_8x4bit_inst (
+  
+     .R(RriteMem),
+     .addr(ar_data),
+     .data_in(out_cb),
+     .data_out(ram_data)
+ );
+ 
+ // Add your additional code here
+ 
+ 
+ 
+ // Declare signals
  
 
  
- // Inputs
- wire [7:0] T;
- wire [7:0] D;
- wire I;
- wire [7:0] B;
+ // Instantiate the Sequence_Counter3Bit2 module
+ Sequence_Counter3Bit2 Sequence_Counter3Bit2_inst (
+     .clk(CLK),
+     .CLR(CLRSC),
+     .count(count) /////////////////////////////////////////////////////////////
+ );
  
- // Outputs
- wire LDAC, CLRAC, INRAC, LDAR, RriteMem, LDDR, LDIR, INRPC, CLRSC;
- wire [0:2] s;
- wire AND, ADD, LDA, CMA, OR;
+ // Add your additional code here
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Declare signals
  
- // Instantiate ControlUnit module
- ControlUnit control_unit_inst (
-     .T(T),
-     .D(D),
-     .I(I),
-     .B(B),
-     .LDAC(LDAC),
-     .CLRAC(CLRAC),
-     .INRAC(INRAC),
-     .LDAR(LDAR),
-     .RriteMem(RriteMem),
-     .LDDR(LDDR),
-     .LDIR(LDIR),
-     .INRPC(INRPC),
-     .CLRSC(CLRSC),
-     .s(s),
+ 
+ 
+ // Instantiate the Decoder3x8 module
+ Decoder3x8 Decoder3x8_inst (
+     .A(count),
+     .Y(T)
+ );
+ 
+  Decoder3x8 Decoder2_3x8_inst (
+     .A(ir_data[6:4]),
+     .Y(D)
+ );
+ 
+ // Add your additional code here
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+ // Declare signals
+ 
+
+ 
+ 
+ // Instantiate the Alu module
+ Alu Alu_inst (
      .AND(AND),
      .ADD(ADD),
      .LDA(LDA),
      .CMA(CMA),
-     .OR(OR)
- );
- 
- ///////////////////////
- // Inputs
-
- wire [7:0] adder_out;
- // Outputs
- wire [7:0] ac_data;
- // Instantiate AC_Reg module
- AC_Reg ac_reg_inst (
-     .INR(INRAC),
-     .clk(CLK),
-     .LD(LDAC),
-     .CLR(CLRAC),
-     .in(adder_out),
-     .out_ac(ac_data)
+     .OR(OR),
+     .cin(cin),
+     .out_ac(ac_data),
+     .out_dr(dr_data),
+     .result(adder_out),
+     .cout(e_data)
  );
  
  
+   assign E=e_data;
+ assign MEM=ram_data;
+ assign AR=ar_data;
+ assign AC=ac_data;
+ assign PC=pc_data;
+ assign IR=ir_data;
+  assign DR=dr_data;
+   assign SC=T;
  
-
  
- // Inputs
- wire [7:0] dr_data,ir_data,ram_data;
- wire [3:0] ar_data, pc_data;
-
  
- // Output
- wire [7:0] out_cb;
- 
- // Instantiate BUS_SEL module
- BUS_SEL bus_sel_inst (
-     .DR(dr_data),
-     .AC(AC),
-     .IR(ir_data),
-     .RAM(ram_data),
-     .AR(ar_data),
-     .PC(ar_data),
-     .s(s),
-     .OUT(out_cb)
- );
-
-
-// Declare signals
-// Instantiate the AR_Reg module
-AR_Reg AR_Reg_inst (
-  
-    .clk(CLK),
-    .LD(LDAR),
-    .in(out_cb),
-    .out_ar(ar_data)
-);
-
-
-// Instantiate the DR_Reg module
-DR_Reg DR_Reg_inst (
-    .clk(CLK),
-    .Load(LDDR),
-    .in(out_cb),
-    .out_dr(dr_data)
-);
-
-// Add your additional code here
-
-
-// Declare signals
-
-
-// Instantiate the IR_Reg module
-IR_Reg IR_Reg_inst (
-    .clk(CLK),
-    .load(LDIR),
-    .in(out_cb),
-    .out_ir(ir_data)
-);
-
-// Instantiate the PC_Reg module
-PC_Reg PC_Reg_inst (
-    .INR(INRPC),
-    .clk(CLK),
-    .in(out_cb),
-    .out_pc(pc_data)
-);
-// Add your additional code here
-
-
-
-
-// Instantiate the RAM_8x4bit module
-RAM_8x4bit RAM_8x4bit_inst (
- 
-    .R(RriteMem),
-    .addr(ar_data),
-    .data_in(out_cb),
-    .data_out(ram_data)
-);
-
-// Add your additional code here
-//////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Declare signals
-wire [7:0] d0, d1, d2, d3, d4, d5, d6, d7; // 8-bit input data
-wire [2:0] sel;                            // Selection input
-wire [7:0] out;                           // Output data
-
-// Instantiate the MUX_8to1 module
-MUX_8to1 MUX_8to1_inst (
-    .d0(d0),
-    .d1(d1),
-    .d2(d2),
-    .d3(d3),
-    .d4(d4),
-    .d5(d5),
-    .d6(d6),
-    .d7(d7),
-    .sel(sel),
-    .out(out)
-);
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Add your additional code here
-
-
-// Declare signals
-
-wire [2:0] count;
-
-// Instantiate the Sequence_Counter3Bit2 module
-Sequence_Counter3Bit2 Sequence_Counter3Bit2_inst (
-    .clk(CLK),
-    .CLR(CLRSC),
-    .count(count) /////////////////////////////////////////////////////////////
-);
-
-// Add your additional code here
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Declare signals
-wire [2:0] A;
-reg [7:0] Y;
-
-// Instantiate the Decoder3x8 module
-Decoder3x8 Decoder3x8_inst (
-    .A(A),
-    .Y(Y)
-);
-
-// Add your additional code here
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// Declare signals
-
-wire cin;
-
-wire [7:0] result;
-wire cout;
-
-// Instantiate the Alu module
-Alu Alu_inst (
-    .AND(AND),
-    .ADD(ADD),
-    .LDA(LDA),
-    .CMA(CMA),
-    .OR(OR),
-    .cin(cin),
-    .out_ac(ac_data),
-    .out_dr(dr_data),
-    .result(result),
-    .cout(cout)
-);
-
-// Add your additional code here
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
- endmodule
+  endmodule
