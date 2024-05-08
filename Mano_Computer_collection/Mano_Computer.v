@@ -2,7 +2,7 @@ module ControlUnit (
     input [7:0] T, input [7:0] D ,input I, input [7:0] B, 
     output  LDAC, CLRAC, INRAC,LDAR,RriteMem,LDDR,LDIR,INRPC,CLRSC,
     output [0:2] s, 
-    output AND,ADD,LDA,CMA,OR
+    output AND,ADD,LDA,CMA,OR,INC
 ); 
 // AC 
 AC_Control my_ac ( 
@@ -74,7 +74,8 @@ ALU_CONTROL alu (
 .ADD(ADD),
 .LDA(LDA),
 .CMA(CMA),
-.OR(OR) 
+.OR(OR),
+.INC(INC) 
 ); 
 endmodule 
 //  AC_Control 
@@ -82,9 +83,9 @@ module AC_Control (
     input [7:0] T, input [7:0] D ,input I, input [7:0] B, 
     output  LD,CLR,INR 
 ); 
-assign LD= (T[5]  & (D[0]|D[1]|D[2]) ) | ((D[7] & !I & T[3]) &B[2]) | (D[5]&T[5]); //B[9]
+assign LD= (T[5]  & (D[0]|D[1]|D[2]) ) | ((D[7] & !I & T[3]) &B[2]) | (D[5]&T[5])|((D[7] & !I & T[3])&B[0]); //B[9]
 assign CLR = (D[7] & !I & T[3]) & B[3]; //B[11]
-assign INR = (D[7] & !I & T[3])&B[0]; //B[5]
+assign INR =0;  //B[5]
 endmodule 
 //   AR_Control 
 module AR_Control(LD, T, D, I); 
@@ -152,17 +153,18 @@ endmodule
 // rest of instruction_control 
 module ALU_CONTROL ( 
  T, D, I,B ,
-AND,ADD,LDA,CMA,OR 
+AND,ADD,LDA,CMA,OR,INC
 ); 
 input  I; 
 input [7:0] T, D ; 
 input [7:0] B; 
-output AND,ADD,LDA,CMA,OR   ; 
+output AND,ADD,LDA,CMA,OR,INC  ; 
 assign AND= D[0] & T[5]; 
 assign ADD= D[1] & T[5]; 
 assign LDA= D[2] & T[5]; 
 assign CMA= (D[7] & !I & T[3]) & B[2]; 
-assign OR= D[5]& T[5];             
+assign OR= D[5]& T[5];    
+assign INC=  (D[7] & !I & T[3]) & B[0];         
 endmodule 
 // sc_Control 
 module SC_Control ( 
@@ -183,15 +185,19 @@ module AC_Reg(
     
     ,input[7:0] in 
     ,output reg [7:0] out_ac 
+    
 ) ; 
+
 initial begin 
      out_ac=8'hac; 
+ 
  end 
+ 
 
     always @(posedge clk ) begin 
          if(CLR) begin out_ac<=8'b0; end
          else if (LD) begin out_ac <=in; end
-         else if (INR) begin out_ac<=in+1; end
+         else if (INR) begin  out_ac<=out_ac+1; end
  
     end
 endmodule
@@ -283,7 +289,7 @@ endmodule
      initial begin 
      // Initialize memory array with desired values 
      ram[0]  = 8'h0C;  //00001100   AND 
-     ram[1]  = 8'h13;  //00010011   ADD             the firt 4 DR   and 3 after go to  decoder
+     ram[1]  = 8'h13;  //00010011   ADD             the firt 4 DR   and 3 after go to  decoder 
      ram[2]  = 8'h24;  //00100100   LDA    
      ram[3]  = 8'h56;  //01010110   OR
      ram[4]  = 8'h78;  //01111000   CLA       //B[11] ==> B[3]
@@ -407,20 +413,24 @@ module BUS_SEL (
   endmodule
  ///////////////////////
  module Alu(
-      input wire AND, ADD, LDA, CMA, OR,
+      input wire AND, ADD, LDA, CMA, OR,INC,
       input wire cin,
       input wire [7:0] out_ac, 
-      input wire [7:0] out_dr, 
+      input wire [7:0] out_dr,
+     
       output reg [7:0] result, 
       output reg cout 
   );
-  
+  initial begin 
+      
+       cout=0;
+   end 
   always @(*)
   begin
       // AND operation
       if (AND) begin 
           result = out_ac & out_dr;
-          cout = 0; 
+  
       end
       // ADD operation
       else if (ADD) begin
@@ -429,22 +439,28 @@ module BUS_SEL (
       // LOAD operation
       else if (LDA) begin
           result = out_dr;
-          cout = 0; 
+      
       end 
       // OR operation                                      
       else if (OR) begin
           result = out_ac | out_dr;
-          cout = 0; 
+      
       end
       // COMPLEMENT operation
       else if (CMA) begin
           result = ~out_ac;
-          cout = 0;
+    
       end
+        else if (INC) begin
+             {cout, result}=out_ac+1;
+            
+          end
+   
       else begin
           result = out_ac;
-          cout = 0;
+     
       end
+      
   end
   endmodule
   
@@ -468,7 +484,7 @@ module BUS_SEL (
   // Outputs
   wire LDAC, CLRAC, INRAC, LDAR, RriteMem, LDDR, LDIR, INRPC, CLRSC;
   wire [0:2] s;
-  wire AND, ADD, LDA, CMA, OR;
+  wire AND, ADD, LDA, CMA, OR,INC;
   wire [7:0] dr_data,ir_data,ram_data;
   wire [3:0] ar_data, pc_data;
   wire [7:0] adder_out;
@@ -498,7 +514,8 @@ module BUS_SEL (
       .ADD(ADD),
       .LDA(LDA),
       .CMA(CMA),
-      .OR(OR)
+      .OR(OR),
+      .INC(INC)
   );
   
   ///////////////////////
@@ -513,6 +530,7 @@ module BUS_SEL (
       .CLR(CLRAC),
       .in(adder_out),
       .out_ac(ac_data)
+
   );
   
   
@@ -638,6 +656,7 @@ module BUS_SEL (
      .LDA(LDA),
      .CMA(CMA),
      .OR(OR),
+     .INC(INC),
      .cin(cin),
      .out_ac(ac_data),
      .out_dr(dr_data),
