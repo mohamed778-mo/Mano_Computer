@@ -1,5 +1,5 @@
 # Mano Computer
-Hello Microprocessor 👋 
+Hello World 🤓
 ![COMPUTER](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/2ee9d03f-7af6-498e-afb0-7a69d5ce9de4)
 
 
