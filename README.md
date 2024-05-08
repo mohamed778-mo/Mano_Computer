@@ -1,7 +1,6 @@
 # Mano Computer
-Hello World 
 
-![cat PC](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/631d8e31-6248-4c77-b8a1-7d2c2b7deb5a)
+![Screenshot (1)](https://github.com/mohamed778-mo/Mano_Computer_project/assets/137796091/3ef2a44a-68bb-4b61-acb5-76072ae3439a)
 
 
 
